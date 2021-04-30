@@ -3,19 +3,27 @@ const express = require("express");
 const app = express();
 const mongoose = require("mongoose");
 require("dotenv").config();
+const bb = require("express-busboy")
 const bodyParser = require("body-parser")
 const adminRoute = require("./src/route/admin")
 const studentRoute = require("./src/route/student")
 const teacherRoute = require("./src/route/teacher")
 const loginRoute = require("./src/route/user")
+const classRoute = require("./src/route/class")
+
+
 
 //work with dot env file
 const port = process.env.PORT || 8080
 const mongoUrl = process.env.URL
 
 //body parser part
-app.use(bodyParser.urlencoded({extended:true}))
-app.use(bodyParser.json())
+// app.use(bodyParser.urlencoded({extended:true}))
+// app.use(bodyParser.json())
+// bb.extend(app) //from this way i can get data from front end
+
+app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
 
 //creat the server
 app.listen(port, () => {console.log(`Server is running on ${port}`)})
@@ -43,6 +51,7 @@ app.use("/user/admin", adminRoute)
 app.use("/user/student", studentRoute)
 app.use("/user/teacher", teacherRoute)
 app.use("/user", loginRoute)
+app.use("/academic", classRoute)
 
 //default route
 app.get("*",(req, res) => {

@@ -56,6 +56,10 @@ const studentSchema = new Schema({
             type: Boolean,
             default: true
         },
+        isDeleted:{
+            type: Boolean,
+            default: false
+        },
         syllabus:{
             type: String,
             default: ""

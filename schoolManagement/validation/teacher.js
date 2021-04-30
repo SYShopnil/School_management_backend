@@ -47,7 +47,8 @@ const academicInfoValidation = Joi.object({
 const officalInfoValidation = Joi.object({
      salary: Joi.string().required(),
      department: Joi.string().required(),
-     isActive: Joi.boolean()
+     isActive: Joi.boolean(),
+     isDeleted : Joi.boolean()
 })
 
 //password validation

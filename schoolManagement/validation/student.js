@@ -31,7 +31,8 @@ const academicInfoValidation = Joi.object({
     class: Joi.string().required(),
     admissionDate: Joi.date(),
     isActive: Joi.boolean(),
-    syllabus:Joi.string()
+    syllabus:Joi.string(),
+    isDeleted: Joi.boolean()
 })
 
 //modification validation
