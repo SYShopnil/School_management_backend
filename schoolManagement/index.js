@@ -10,6 +10,8 @@ const studentRoute = require("./src/route/student")
 const teacherRoute = require("./src/route/teacher")
 const loginRoute = require("./src/route/user")
 const classRoute = require("./src/route/class")
+const syllabusRoute = require("./src/route/syllabus")
+const classRoutineRoute = require("./src/route/classRoutine")
 
 
 
@@ -52,6 +54,8 @@ app.use("/user/student", studentRoute)
 app.use("/user/teacher", teacherRoute)
 app.use("/user", loginRoute)
 app.use("/academic", classRoute)
+app.use("/academic", syllabusRoute)
+app.use("/academic/class", classRoutineRoute)
 
 //default route
 app.get("*",(req, res) => {

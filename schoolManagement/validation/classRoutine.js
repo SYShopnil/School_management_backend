@@ -21,10 +21,16 @@ const arrayElement = Joi.object({
     period: Joi.array().items(periodItems)
 })
 
+//statusValidation validation
+const statusValidation = Joi.object({
+    isDeleted: Joi.boolean()
+})
+
 //class routine main validation
 const mainValidation = Joi.object({
     className: Joi.string().required(),
     routine: Joi.array().items(arrayElement),
+    status: statusValidation,
     modification: modificationValidation,
 })
 

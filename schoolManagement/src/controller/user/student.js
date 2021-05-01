@@ -3,7 +3,11 @@ const studentValidator = require("../../../validation/student") //get the studen
 const Student = require("../../model/user/student")
 const User = require("../../model/user/user")
 const Class = require("../../model/academic/class")
-const { updateOne } = require("../../model/user/student")
+const jwtDecode = require("jwt-decode")
+const { updateOne, findOne } = require("../../model/user/student")
+const Syllabus = require("../../model/academic/syllabus")
+const Teacher = require("../../model/user/teacher")
+const ClassRoutine = require("../../model/academic/classRoutine")
  
 //creat a student
 const newStudentCreatController = async (req, res) => {
@@ -19,7 +23,7 @@ const newStudentCreatController = async (req, res) => {
             const {password, userId, personalInfo, userType} = req.body //get the expected data from req body
  
             //start the procedure of creat a unique user id
-            const splitedDateOfBirth = personalInfo.dateOfBirth.split("-");
+            const splitedDateOfBirth = personalInfo.dateOfBirth.split("-")
             const birthYear =  splitedDateOfBirth[0]
             const birthDate = splitedDateOfBirth[splitedDateOfBirth.length - 1]
  
@@ -74,7 +78,7 @@ const newStudentCreatController = async (req, res) => {
         })
     }
 }
- 
+
 
 //update student info
 const updateStudentInfoController = async (req, res) => {
@@ -116,45 +120,52 @@ const updateStudentInfoController = async (req, res) => {
         })
     }
 }
- 
+
 //delete a student
 const deleteStudentSingleController = async (req, res) => {
     try{
         const {id} = req.params //get the id from params
         const findStudent = await Student.findOne({_id: id}) //find the expected student from database
         if(findStudent){
-            const deleteStudent = await Student.findByIdAndUpdate(
-                {
-                    _id: id
-                }, //querry
-                {
-                    $set:{
-                        "academicInfo.isDeleted": true,
-                        "academicInfo.isActive": false,
-                    }
-                }, //update part
-            )
-            if(deleteStudent){
-                res.json({
-                    message: `${findStudent.personalInfo.name.FirstName} ${findStudent.personalInfo.name.LastName} is deleted `
-                })
-
-                const updateClass = await Class.updateOne(
+            const {isDeleted} = findStudent.academicInfo //find the is deleted current status
+            if(isDeleted == false){
+                const deleteStudent = await Student.findByIdAndUpdate(
                     {
-                        className: findStudent.academicInfo.class
-                    } ,//querry
+                        _id: id
+                    }, //querry
                     {
-                        $inc : {
-                            studentNumber: -1 //delete one student from the class
-                        } 
-                    }, //update
-                    {} //option
+                        $set:{
+                            "academicInfo.isDeleted": true,
+                            "academicInfo.isActive": false,
+                        }
+                    }, //update part
                 )
-                if(updateClass){
-                    console.log("class has been update ");
-                }else{
-                    console.log("class update failed");
+                if(deleteStudent){
+                    res.json({
+                        message: `${findStudent.personalInfo.name.FirstName} ${findStudent.personalInfo.name.LastName} is deleted `
+                    })
+
+                    const updateClass = await Class.updateOne(
+                        {
+                            className: findStudent.academicInfo.class
+                        } ,//querry
+                        {
+                            $inc : {
+                                studentNumber: -1 //delete one student from the class
+                            } 
+                        }, //update
+                        {} //option
+                    )
+                    if(updateClass){
+                        console.log("class has been update ");
+                    }else{
+                        console.log("class update failed");
+                    }
                 }
+            }else{
+                res.json({
+                    message: `${findStudent.personalInfo.name.FirstName} ${findStudent.personalInfo.name.LastName} is already deleted `
+                })
             }
         }else{
             res.json({
@@ -182,7 +193,8 @@ const studentActiveInactiveController = async (req, res) => {
             if(isActive == false){
                 const activated = await Student.findOneAndUpdate(
                     {
-                        _id: id //get the student by id
+                        _id: id ,//get the student by id,
+                        "academicInfo.isDeleted": false
                     }, //querry
                     {
                         "academicInfo.isActive" : true //if the student is not active then make it active
@@ -202,7 +214,8 @@ const studentActiveInactiveController = async (req, res) => {
                     // console.log(isActive); //for debugging purpose
                  const inactive = await Student.findOneAndUpdate(
                     {
-                        _id: id //get the student by id
+                        _id: id ,//get the student by id
+                        "academicInfo.isDeleted": false
                     }, //querry
                     {
                         "academicInfo.isActive" : false //if the student is not inactive then make it inactive
@@ -266,11 +279,206 @@ const profileViewController = async (req, res) => {
     }
 }
 
+
+//view all student by class
+const viewAllStudentByClass = async (req, res) => {
+    try{
+        const {className} = req.params //get the class name from params
+        const findClass = await Class.findOne({className}) //find the class
+        if(findClass){
+            const findStudent = await Student.find(
+                {
+                    "academicInfo.class": className //querry data by class name
+                }
+            )
+            if(findStudent){
+                res.status(200).json({
+                    findStudent
+                })
+            }else{
+                res.status(404).json({
+                    message: "Student not found"
+                })
+            }
+        }else{
+            res.status(404).json({
+                message: "Class not found"
+            })
+        }
+    }
+    catch(err){
+        console.log(err);
+        res.status(404).json({
+            err
+        })
+    }
+}
+
+//view individual student by id
+const individualStudentByIdController = async (req, res) => {
+    try{
+        const {id} = req.params; //get the student from params
+        const findStudent = await Student.findOne({_id: id}) //find the student by id
+        if(findStudent){
+            const student = findStudent //store the student here
+            res.json({
+                message: `${student.personalInfo.name.FirstName} ${student.personalInfo.name.LastName} found`,
+                student 
+            })
+        }else{
+            res.status(404).json({
+                messasge: "student not found"
+            })
+        }
+    }
+    catch(err){
+        console.log(err);
+        res.json({
+            err
+        })
+    }
+}
+
+//view syllabus 
+const viewSyllabusController = async (req, res) => {
+    try{
+        const token = req.header("Authorization") //get the token from body header
+        const tokenData = jwtDecode(token) //get the data
+        const {userType, id} = tokenData;
+        if(userType == "student"){
+            const findStudent = await Student.findOne({_id: id})
+            if(findStudent){
+                
+                const student = findStudent //store the data of findStudent
+                const {class:className} = student.academicInfo
+                const findSyllabus = await Syllabus.findOne({className})
+                if(findSyllabus){
+                    res.json({
+                        message: "syllabus have found",
+                        findSyllabus
+                    })
+                }else{
+                    res.staus(404).json({
+                        message: "syllabus not found"
+                    })
+                }
+            }else{
+                res.status(404).json({
+                    message: "Student not found"
+                })
+            }
+        }else{
+            res.status(404).json({
+                message: "This is not a valid user"
+            })
+        }
+    }
+    catch(err){
+        console.log(err);
+        res.json({
+            err
+        })
+    }
+}
+
+//download syllabus
+const downloadSyllabusController = async (req, res) => {
+    try{
+        const token = req.header("Authorization") //get the token from body header
+        const tokenData = jwtDecode(token) //get the data
+        const {userType, id} = tokenData;
+        if(userType == "student"){
+            const findStudent = await Student.findOne({_id: id}) //find the student
+            if(findStudent){
+                const {class:className} = findStudent.academicInfo //get the class of that student
+                const getTheSyllabusFile = await Syllabus.findOne(
+                    {
+                        className
+                    }
+                ) //search the expected syllabus
+                if(getTheSyllabusFile){
+                    const {file} = getTheSyllabusFile //get the file name
+                    const route = `E:/Topper/MERN/Project/school-management_backend/schoolManagement/documents/file/${file}`
+                    res.download(route, (err) => {
+                        if(err){
+                            console.log(err);
+                        }else{
+                            console.log("Download successfully");
+                        }
+                    })
+                }else{
+                    res.staus(404).json({
+                        message: "syllabus not found"
+                    })
+                }
+            }else{
+                res.status(404).json({
+                    message: "student not found"
+                })
+            }
+        }
+    }
+    catch(err){
+        err
+    }
+}
+
+//view own class routine
+const viewOwnClassRoutineController = async (req, res) => {
+    try{
+        const token = req.header("Authorization") //get the token from body header
+        const tokenData = jwtDecode(token) //get the data
+        const {id} = tokenData //get the data from token
+        const isValidStudent = await Student.findOne(
+            {
+                _id: id,
+                "academicInfo.isActive": true,
+                "academicInfo.isDeleted": false
+            }
+        ) //check is it a valid student
+        if(isValidStudent){
+            const student = isValidStudent //store the student to the student variable
+            const {class: className} = student.academicInfo //get the class name
+            const findRoutine = await ClassRoutine.findOne(
+                {
+                    className,
+                    "status.isDeleted": false
+                }
+            )//search the class routine and return it
+            if(findRoutine){
+                res.json({
+                    message: "Routine found",
+                    findRoutine
+                })
+            }else{
+                res.status(404).json({
+                    message: "class Routine not found"
+                })
+            }
+        }else{
+            res.status(404).json({
+                message: "Student not found"
+            })
+        }
+    }
+    catch(err){
+        console.log(err);
+        res.json({
+            err
+        })
+    }
+}
+
 //export part
 module.exports = {
     newStudentCreatController,
     updateStudentInfoController,
     deleteStudentSingleController,
     studentActiveInactiveController,
-    profileViewController
+    profileViewController,
+    viewAllStudentByClass,
+    individualStudentByIdController,
+    viewSyllabusController,
+    downloadSyllabusController,
+    viewOwnClassRoutineController
 }

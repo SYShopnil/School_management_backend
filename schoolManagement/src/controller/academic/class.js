@@ -75,6 +75,7 @@ const creatSyllabusController = async (req, res) => {
         })
     }else{
         const fileName = req.file.filename //get the upload file name
+        console.log(fileName);
         const createNewSyllabus = new Syllabus({
             ...req.body,
             file: fileName
@@ -133,19 +134,26 @@ const deleteClassController = async (req, res) => {
         const {className} = req.params //get the class name from params
         const findTheClass = await Class.findOne({className}) //find the expected class from database
         if(findTheClass){
-            const deleteClass = await Class.updateOne(
-                {
-                    className
-                }, //querry
-                {
-                    $set:{
-                        isDeleted: true,
-                    }
-                }, //update part
-            )
-            if(deleteClass){
+            const {isDeleted} = findTheClass
+            if(isDeleted == false){
+                const deleteClass = await Class.updateOne(
+                    {
+                        className
+                    }, //querry
+                    {
+                        $set:{
+                            isDeleted: true,
+                        }
+                    }, //update part
+                )
+                if(deleteClass){
+                    res.json({
+                        message: `Class ${findTheClass.className} is deleted `
+                    })
+                }
+            }else{
                 res.json({
-                    message: `Class ${findTheClass.className} is deleted `
+                    message:  `Class ${findTheClass.className} is already deleted `
                 })
             }
         }else{
@@ -165,11 +173,11 @@ const deleteClassController = async (req, res) => {
 //view all class list
 const viewClassController = async (req, res) => {
     try{
-        const {className} = req.params //get the class name from the params
-        const findClass = await Class.findOne({className}) //find the class according to the params value
+        // const {className} = req.params //get the class name from the params
+        const findClass = await Class.find() //find the class according to the params value
         if(findClass){
             res.json({
-                message: `Class ${findClass.className} found`,
+                message: `All Classes found`,
                 findClass
             })
         }else{

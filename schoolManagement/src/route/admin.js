@@ -7,8 +7,8 @@ const permission = require("../../middleware/permission")
 
 const route = getExpress.Router()
 
-route.post("/register", imgUpload.single("proImg") ,registrationController)
-route.post("/upload", imgUpload.single("img"), (req, res) => {
+route.post("/register",imgUpload.single("proImg") ,registrationController)
+route.post("/upload", auth,permission(["admin","teacher","student"]), imgUpload.single("img"), (req, res) => {
     console.log(req.file);
 }) //fake route for test the upload process
 

@@ -135,7 +135,7 @@ const deleteTeacherTempController = async (req, res) => {
 }
 
 //change active inactive status
-const studentActiveInactiveController = async (req, res) => {
+const teacherActiveInactiveController = async (req, res) => {
     try{
         const {id} = req.params //get the id from params
         const findTheTeacher  = await Teacher.findOne({_id: id}) //find the teacher  from data base 
@@ -146,7 +146,8 @@ const studentActiveInactiveController = async (req, res) => {
             if(isActive == false){
                 const activated = await Teacher.findOneAndUpdate(
                     {
-                        _id: id //get the teacher by id
+                        _id: id, //get the teacher by id
+                        "officalInfo.isDeleted": false
                     }, //querry
                     {
                         "officalInfo.isActive" : true //if the teacher is not active then make it active
@@ -166,7 +167,8 @@ const studentActiveInactiveController = async (req, res) => {
                     // console.log(isActive); //for debugging purpose
                  const inactive = await Teacher.findOneAndUpdate(
                     {
-                        _id: id //get the teacher by id
+                        _id: id, //get the teacher by id
+                        "officalInfo.isDeleted": false
                     }, //querry
                     {
                         "officalInfo.isActive" : false //if the teacher is not inactive then make it inactive
@@ -197,10 +199,87 @@ const studentActiveInactiveController = async (req, res) => {
     }
 }
 
+
+//see all teacher
+const showAllTeacherController = async(req, res) => {
+    try{
+        const isGetAllTeacher = await Teacher.find(
+            {
+                $and: [
+                    {
+                        "officalInfo.isActive": true
+                    },
+                    {
+                        "officalInfo.isDeleted": false
+                    }
+                ]
+            }
+        ).select(
+            "personalInfo.name personalInfo.contact personalInfo.email personalInfo.dateOfBirth officalInfo.isActive officalInfo.department academicInfo"
+        )
+        if(isGetAllTeacher){
+            res.json({
+                message: "all teacher found",
+                isGetAllTeacher
+            })
+        }else{
+            res.status(404).json({
+                message: "Teacher not found"
+            })
+        }
+    }
+    catch(err){
+        console.log(err);
+        res.json({
+            err
+        })
+    }
+}
+
+//find individual teacher
+const findIndividualTeacherController = async (req, res) => {
+    try{
+        const {id} = req.params //get the params data from route
+        const isFindTeacher = await Teacher.findOne(
+            {
+                $and : [
+                {
+                    _id: id
+                },
+                {
+                    "officalInfo.isDeleted" : false,
+                    "officalInfo.isActive": true
+                }
+              ]
+            }
+        ).select(
+            `personalInfo.name personalInfo.email personalInfo.contact.mobileNo`
+        ) //check the data and filter it
+        if(isFindTeacher){
+            res.json({
+                message: `${isFindTeacher.personalInfo.name.FirstName} ${isFindTeacher.personalInfo.name.LastName} have found`,
+                isFindTeacher
+            })
+        }else{
+            res.status(404).json({
+                message: "Teacher not found"
+            })
+        }
+    }
+    catch(err){
+        console.log(err);
+        res.status(404).json({
+            err
+        })
+    }
+}
+
 //export part
 module.exports = {
     teacherRegistrationController,
     updateTeacherInfoController,
     deleteTeacherTempController,
-    studentActiveInactiveController
+    teacherActiveInactiveController,
+    showAllTeacherController,
+    findIndividualTeacherController
 }

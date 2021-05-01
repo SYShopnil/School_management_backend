@@ -13,14 +13,14 @@ const permission = require("../../middleware/permission")
 
 const route = getExpress.Router()
 
-route.post("/class/new/create", newCLassController)
-route.post("/class/create/classRoutine", routineController)
-route.post("/class/new/syllabus/create",fileUpload.single("syllabusFile"), creatSyllabusController)
+route.post("/class/new/create",auth,permission(["admin"]),newCLassController)
+route.post("/class/create/classRoutine", auth,permission(["admin"]), routineController)
+route.post("/class/new/syllabus/create",auth,permission(["admin","teacher"]), fileUpload.single("syllabusFile"), creatSyllabusController)
 
-route.put("/class/update/:className", updateClassController)
-route.put("/class/delete/temp/:className", deleteClassController)
+route.put("/class/update/:className",auth,permission(["admin"]) ,updateClassController)
+route.put("/class/delete/temp/:className",auth,permission(["admin"]), deleteClassController)
 
-route.get("/class/view/:className", viewClassController)
+route.get("/class/view", auth,permission(["admin"]), viewClassController)
 
 //export part
 module.exports = route

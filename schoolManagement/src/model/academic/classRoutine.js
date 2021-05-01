@@ -27,6 +27,12 @@ const routineSchema = new Schema({
             ]
         }
     ],
+    status:{
+        isDeleted:{
+            type: Boolean,
+            default: false
+        }
+    },
     modification:{
         createdAt:{
             type: Date,

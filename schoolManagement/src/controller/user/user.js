@@ -21,7 +21,18 @@ const loginController = async (req, res) => {
     try{
         const {userId, password, userType} = req.body //get the data from body
         if(userType == "admin"){    //admin login controller
-            const isValidUser = await Admin.findOne({userId}) //find the user
+            const isValidUser = await Admin.findOne(
+                {
+                    $and: [
+                        {
+                            userId
+                        },
+                        {
+                            "officalInfo.isDeleted": false
+                        }
+                    ]
+                }
+            ) //find the user
             if(isValidUser){
                 const user = isValidUser //get the user
                 const isPasswordMatch = await bcrypt.compare(password, user.password) //check is the password have been matched or not
@@ -50,7 +61,18 @@ const loginController = async (req, res) => {
             }
             
         } else if(userType == "student"){ //student login controller
-            const isValidUser = await Student.findOne({userId}) //find the user
+            const isValidUser = await Student.findOne(
+                 {
+                    $and: [
+                        {
+                            userId
+                        },
+                        {
+                            "academicInfo.isDeleted": false
+                        }
+                    ]
+                }
+            ) //find the user
             if(isValidUser){
                 const user = isValidUser //get the user
                 const isPasswordMatch = await bcrypt.compare(password, user.password) //check is the password have been matched or not
@@ -78,7 +100,18 @@ const loginController = async (req, res) => {
                 })
             }
         }else if(userType == "teacher"){   //teacher login controller
-            const isValidUser = await Teacher.findOne({userId}) //find the user
+            const isValidUser = await Teacher.findOne(
+                 {
+                    $and: [
+                        {
+                            userId
+                        },
+                        {
+                            "officalInfo.isDeleted": false
+                        }
+                    ]
+                }
+            ) //find the user
             if(isValidUser){
                 const user = isValidUser //get the user
                 const isPasswordMatch = await bcrypt.compare(password, user.password) //check is the password have been matched or not
@@ -739,11 +772,69 @@ const updateProfilePictureController = async (req, res) => {
     }
 }
 
+//view own profile
+const viewOwnProfileController = async (req, res) => {
+    try{
+       const headerToken = req.header("Authorization")  //get the token from body header
+       const tokenData = jwtDecode(headerToken) //decode the token data
+       const {id, userType} = tokenData  //take the id and user type from the token
+       if(userType == "admin"){ //if the user typ is admin
+           const findAdmin = await Admin.findOne(
+               {
+                   _id: id
+               }
+           )//query data from data base
+           if(findAdmin){
+               const adminProfile = findAdmin
+               res.json({
+                   message: "admin found",
+                   adminProfile
+               })
+           }
+       }else if (userType == "student"){
+           const findStudent = await Student.findOne(
+               {
+                   _id: id
+               }
+           )//query data from data base
+           if(findStudent){
+               const studentProfile = findStudent
+               res.json({
+                   message: "student found",
+                   studentProfile
+               })
+           }
+       } else if (userType == "teacher"){
+           const findTeacher = await Teacher.findOne(
+               {
+                   _id: id
+               }
+           )//query data from data base
+           if(findTeacher){
+               const teacherProfile = findTeacher
+               res.json({
+                   message: "teacher found",
+                   teacherProfile
+               })
+           }
+       }
+
+    }
+    catch(err){
+        console.log(err);
+        res.json({
+            err
+        })
+    }
+}
+
+
 //export part 
 module.exports = {
     loginController,
     updatePassword,
     forgotPassword,
     resetPassword,
-    updateProfilePictureController
+    updateProfilePictureController,
+    viewOwnProfileController
 }
