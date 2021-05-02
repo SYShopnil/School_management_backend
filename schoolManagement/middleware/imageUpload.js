@@ -6,7 +6,7 @@ const multer = require("multer")
 const fileFilter = (req, file, cb) => {
     const getExtention = file.mimetype.split("/")
     const myExtention = getExtention[getExtention.length - 1]
-    if(myExtention == "jpeg" || myExtention == "jpg"){
+    if(myExtention == "jpeg" || myExtention == "jpg" || myExtention == "png"){
          cb(null, true)
     }else{
         cb(new Error("only jpeg and jpg are allowed"))

@@ -31,7 +31,7 @@ route.put("/change/activeInactive/:id",auth,permission(["admin"]), studentActive
 route.get("/profile/view/:id",auth,permission(["admin"]), profileViewController)
 route.get("/view/all/:className", auth,permission(["admin","teacher"]),  viewAllStudentByClass)
 route.get("/view/:id", auth,permission(["admin","teacher"]),  individualStudentByIdController)
-route.get("/syllabus/download",auth,permission(["student"]),  downloadSyllabusController) //!!i need to see the controller 
+route.get("/:subject/syllabus/download",auth,permission(["student"]),  downloadSyllabusController) //!!i need to see the controller 
 route.get("/show/classRoutine", auth,permission(["student"]), viewOwnClassRoutineController)
 
 

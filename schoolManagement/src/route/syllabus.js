@@ -10,9 +10,9 @@ const permission = require("../../middleware/permission")
 
 const route = getExpress.Router()
 
-route.post("/upload/update/syllabus/:className", auth,permission(["admin","teacher"]),fileUpload.single("syllabusFile"), uploadSyllabusController)
+route.post("/upload/update/syllabus/:className/:subject", auth,permission(["admin","teacher"]),fileUpload.single("syllabusFile"), uploadSyllabusController)
 
-route.get("/download/syllabus/:className",auth,permission(["admin","teacher"]), downloadSyllabusController)
+route.get("/download/syllabus/:className/:subject",auth,permission(["admin","teacher"]), downloadSyllabusController)
 route.get("/view/syllabus/:className", auth,permission(["admin","teacher"]), viewSyllabusByClass)
 
 route.put("/syllabus/update/info/:id", auth,permission(["admin","teacher"]), updateSyllabusInfoController)

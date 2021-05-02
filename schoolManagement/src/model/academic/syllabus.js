@@ -2,13 +2,26 @@ const mongoose = require("mongoose");
 
 const Schema = mongoose.Schema;
 
+
 const syllabusSchema = new Schema({
-    className: String,
-    description: String,
-    file: {
-        default: "",
-        type: String
-    }
+    className:{
+        type: String,
+        trim : true,
+        unique : true
+    },
+    description : String,
+    syllabus : [
+        {
+            subject: {
+                type: String
+            },
+            file: {
+                type: String,
+                default: ""
+            },
+            details: String
+        }
+    ]
 })
 
 //export part

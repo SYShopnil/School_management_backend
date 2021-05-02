@@ -8,18 +8,40 @@ const fileSystem = require("fs")
 //upload a syllabus
 const uploadSyllabusController = async (req, res) => {
     try{
-         const {className} = req.params //get the class name from params
+         const {className, subject} = req.params //get the class name from params
          const findSyllabus = await Syllabus.findOne({className}) //get the syllabus searching by class name
          if(findSyllabus){
-             const {_id, file} = findSyllabus 
-             const oldFileName = file //store the old file name
-             const route = `E:/Topper/MERN/Project/school-management_backend/schoolManagement/documents/file/${oldFileName}` //route of the old file location folder
-             const {filename} = req.file //get the upload file name
-            const uploadFile = await Syllabus.findByIdAndUpdate(
-                {_id},//querry
+             const {_id, syllabus} = findSyllabus 
+
+             //get the old file name step start
+             const getTheFileNameFromDataBaseStepOne = syllabus.map(val => {
+                 if(val.subject == subject){
+                    return val.file
+                 }
+             }) //step 1
+             let getTheFileNameFromDataBaseStepTwo = []
+             getTheFileNameFromDataBaseStepOne.map(value => {
+                 if(value){
+                     getTheFileNameFromDataBaseStepTwo.push(value)
+                 }
+             }) //step 2
+             
+            const getTheOldFileName = getTheFileNameFromDataBaseStepTwo[getTheFileNameFromDataBaseStepTwo.length - 1] //step 3 and finally get the data from database
+            const oldFileName = getTheOldFileName //store the old file name
+            const route = `E:/Topper/MERN/Project/school-management_backend/schoolManagement/documents/file/${oldFileName}` //route of the old file location folder
+            const {filename} = req.file //get the upload file name
+            const uploadFile = await Syllabus.updateOne(
                 {
-                    $set: {
-                        file: filename //store the name of the syllabus file
+                    _id,
+                    syllabus: {
+                        $elemMatch: {
+                            subject //query by subject name 
+                        }
+                    }
+                }, //querry
+                {
+                    $set:{
+                        "syllabus.$.file": filename //store the file name here
                     }
                 }, //update
                 {} //option
@@ -59,18 +81,24 @@ const uploadSyllabusController = async (req, res) => {
 //download syllabus file
 const downloadSyllabusController = async (req, res) => {
     try{
-        const {className} = req.params // get the class name from the params
+        const {className, subject} = req.params // get the class name from the params
         const findSyllabus = await Syllabus.findOne({className}) //find the syllabus with the class name
         if(findSyllabus){
+             const queryTheExistingFileName = findSyllabus.syllabus.find(syllabusData => {
+                if(syllabusData.subject == subject && Boolean(syllabusData.subject) == true ){
+                    return syllabusData
+                }
+            } ) //queryTheFileName is avaialble or not
+            const getTheExistingFileName = queryTheExistingFileName.file //finally got the existing file name
+            const oldFileName = getTheExistingFileName //store the file name 
+            const myFileRoute = `E:/Topper/MERN/Project/school-management_backend/schoolManagement/documents/file/${oldFileName}` //this is the route of the main hard file
             const syllabus = findSyllabus //store the syllabus here
-            const fileName = syllabus.file //get the syllabus file name
-            const myFileRoute = `E:/Topper/MERN/Project/school-management_backend/schoolManagement/documents/file/${fileName}` //this is the route of the main hard file
-            if(myFileRoute){
+            if(myFileRoute){  //check that is my file route is valid or not
                 res.download(myFileRoute, (err) => {
                     if(err){
                         console.log(err);
                         res.json({
-                            message: "file download time error",
+                            message: "File not found in the root",
                             err
                         })
                     }else{

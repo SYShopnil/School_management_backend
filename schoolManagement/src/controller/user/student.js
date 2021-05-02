@@ -385,6 +385,7 @@ const viewSyllabusController = async (req, res) => {
 const downloadSyllabusController = async (req, res) => {
     try{
         const token = req.header("Authorization") //get the token from body header
+        const {subject} = req.params //get the data from params
         const tokenData = jwtDecode(token) //get the data
         const {userType, id} = tokenData;
         if(userType == "student"){
@@ -396,16 +397,31 @@ const downloadSyllabusController = async (req, res) => {
                         className
                     }
                 ) //search the expected syllabus
+                
                 if(getTheSyllabusFile){
-                    const {file} = getTheSyllabusFile //get the file name
-                    const route = `E:/Topper/MERN/Project/school-management_backend/schoolManagement/documents/file/${file}`
-                    res.download(route, (err) => {
-                        if(err){
-                            console.log(err);
-                        }else{
-                            console.log("Download successfully");
+                    // console.log(subject); //for debug purpose
+                    const {syllabus} = getTheSyllabusFile //get the file name
+                    const getTheSubject = syllabus.find(subjectObj => {
+                        if(subjectObj.subject == subject){
+                            return subjectObj
                         }
                     })
+                    // console.log(getTheSubject); //for debug purpose
+                    const {file: filePathName} = getTheSubject //get  the file name from the database
+                    if(filePathName){
+                        const route = `E:/Topper/MERN/Project/school-management_backend/schoolManagement/documents/file/${filePathName}`
+                        res.download(route, (err) => {
+                            if(err){
+                                console.log(err);
+                            }else{
+                                console.log("Download successfully");
+                            }
+                        })
+                    }else{
+                        res.staus(404).json({
+                            message: "file not found in the root file"
+                        })
+                    }
                 }else{
                     res.staus(404).json({
                         message: "syllabus not found"

@@ -776,49 +776,56 @@ const updateProfilePictureController = async (req, res) => {
 const viewOwnProfileController = async (req, res) => {
     try{
        const headerToken = req.header("Authorization")  //get the token from body header
-       const tokenData = jwtDecode(headerToken) //decode the token data
-       const {id, userType} = tokenData  //take the id and user type from the token
-       if(userType == "admin"){ //if the user typ is admin
-           const findAdmin = await Admin.findOne(
-               {
-                   _id: id
-               }
-           )//query data from data base
-           if(findAdmin){
-               const adminProfile = findAdmin
-               res.json({
-                   message: "admin found",
-                   adminProfile
-               })
-           }
-       }else if (userType == "student"){
-           const findStudent = await Student.findOne(
-               {
-                   _id: id
-               }
-           )//query data from data base
-           if(findStudent){
-               const studentProfile = findStudent
-               res.json({
-                   message: "student found",
-                   studentProfile
-               })
-           }
-       } else if (userType == "teacher"){
-           const findTeacher = await Teacher.findOne(
-               {
-                   _id: id
-               }
-           )//query data from data base
-           if(findTeacher){
-               const teacherProfile = findTeacher
-               res.json({
-                   message: "teacher found",
-                   teacherProfile
-               })
-           }
-       }
+       const isValidToken = jwt.verify(headerToken, securityKey) //check is it a valid token or not
+       if(isValidToken){
+            const tokenData = jwtDecode(headerToken) //decode the token data
+            const {id, userType} = tokenData  //take the id and user type from the token
+            if(userType == "admin"){ //if the user typ is admin
+                const findAdmin = await Admin.findOne(
+                    {
+                        _id: id
+                    }
+                )//query data from data base
+                if(findAdmin){
+                    const adminProfile = findAdmin
+                    res.json({
+                        message: "admin found",
+                        adminProfile
+                    })
+                }
+            }else if (userType == "student"){
+                const findStudent = await Student.findOne(
+                    {
+                        _id: id
+                    }
+                )//query data from data base
+                if(findStudent){
+                    const studentProfile = findStudent
+                    res.json({
+                        message: "student found",
+                        studentProfile
+                    })
+                }
+            } else if (userType == "teacher"){
+                const findTeacher = await Teacher.findOne(
+                    {
+                        _id: id
+                    }
+                )//query data from data base
+                if(findTeacher){
+                    const teacherProfile = findTeacher
+                    res.json({
+                        message: "teacher found",
+                        teacherProfile
+                    })
+                }
+            }
 
+        }else{
+            res.json({
+                message: "token is invalid"
+            })
+        }
     }
     catch(err){
         console.log(err);

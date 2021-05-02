@@ -74,16 +74,20 @@ const creatSyllabusController = async (req, res) => {
             error
         })
     }else{
-        const fileName = req.file.filename //get the upload file name
-        console.log(fileName);
-        const createNewSyllabus = new Syllabus({
-            ...req.body,
-            file: fileName
-        }) //create the new syllabus
+        // const fileName = req.file.filename //get the upload file name
+        // console.log(fileName);
+        
+        const createNewSyllabus = new Syllabus({...req.body}) //create the new syllabus
+        
         const saveData = await createNewSyllabus.save() //save the data into the database
         if(saveData){
             res.status(201).json({
-                message: "new syllabus has been created"
+                message: "new syllabus has been created",
+                saveData
+            })
+        }else{
+            res.json({
+                message: "Syllabus creation failed"
             })
         }
     }
