@@ -10,7 +10,8 @@ const adminSchema = new Schema({
      userType:{
         type:String,
         trim: true,
-        enum: ["admin"]
+        enum: ["admin"],
+        default: "admin"
     },
     password:String,
     // retypePassword: String,

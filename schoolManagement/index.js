@@ -11,7 +11,8 @@ const teacherRoute = require("./src/route/teacher")
 const loginRoute = require("./src/route/user")
 const classRoute = require("./src/route/class")
 const syllabusRoute = require("./src/route/syllabus")
-const classRoutineRoute = require("./src/route/classRoutine")
+const classRoutineRoute = require("./src/route/classRoutine");
+const { func } = require("joi");
 
 
 
@@ -61,4 +62,5 @@ app.use("/academic/class", classRoutineRoute)
 app.get("*",(req, res) => {
     res.status(404).send("<h1>Page not found</h1>")
 })
+
 

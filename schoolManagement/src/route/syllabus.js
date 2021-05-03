@@ -1,7 +1,9 @@
 const { uploadSyllabusController, 
         downloadSyllabusController,
         updateSyllabusInfoController,
-        viewSyllabusByClass} = require("../controller/academic/syllabus") //get the controller
+        viewSyllabusByClass,
+        deleteSyllabusInfo,
+        addSyllabusInfo} = require("../controller/academic/syllabus") //get the controller
 const getExpress = require("express")
 const fileUpload = require("../../middleware/fileUpload") //file upload middleware
 const imgUpload = require("../../middleware/imageUpload") //image upload middleware
@@ -16,5 +18,8 @@ route.get("/download/syllabus/:className/:subject",auth,permission(["admin","tea
 route.get("/view/syllabus/:className", auth,permission(["admin","teacher"]), viewSyllabusByClass)
 
 route.put("/syllabus/update/info/:id", auth,permission(["admin","teacher"]), updateSyllabusInfoController)
+route.put("/syllabus/delete/:className/:subject", auth,permission(["admin","teacher"]), deleteSyllabusInfo )
+route.put("/syllabus/add/item/:className/:subject",auth,permission(["admin","teacher"]), addSyllabusInfo )
+
 //export part
 module.exports = route
