@@ -13,6 +13,7 @@ const classRoute = require("./src/route/class")
 const syllabusRoute = require("./src/route/syllabus")
 const classRoutineRoute = require("./src/route/classRoutine");
 const { func } = require("joi");
+const mcqQuestionRoute = require("./src/route/mcqQuestion")
 
 
 
@@ -57,10 +58,64 @@ app.use("/user", loginRoute)
 app.use("/academic", classRoute)
 app.use("/academic", syllabusRoute)
 app.use("/academic/class", classRoutineRoute)
+app.use("/academic", mcqQuestionRoute)
 
 //default route
 app.get("*",(req, res) => {
     res.status(404).send("<h1>Page not found</h1>")
 })
 
+/*const studentAnswer =  [ 
+        {
+            questionNo : 1,
+            answer : "Dhaka"
+        }, 
+        {
+            questionNo : 2,
+            answer : "64"
+        }, 
+        {
+            questionNo : 3,
+            answer : "A table"
+        }
+    ]
 
+const questionSet = [ 
+        {
+            questionNo : 1,
+            question : "What is capital of Bangladesh",
+            originalAnswer : "Dhaka",
+            marks : 1
+        }, 
+        {
+            questionNo : 2,
+            question : "How many District in Bangladesh",
+            originalAnswer : "64",
+            marks : 1
+        }, 
+        {
+            questionNo : 3,
+            question : "What is this",
+            originalAnswer : "A table",
+            marks : 1
+        }
+    ]
+
+let finalResult = 0 
+let right = 0
+let wrong = 0
+questionSet.map(questionParent => {
+    studentAnswer.map(answerParent  => {
+        if(questionParent.questionNo == answerParent.questionNo){
+            if(questionParent.originalAnswer == answerParent.answer){
+                finalResult += questionParent.marks
+                right ++
+            }else{
+                wrong ++
+            }
+        }
+    })
+})
+console.log(finalResult);
+console.log(right);
+console.log(wrong);*/

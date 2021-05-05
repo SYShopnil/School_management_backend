@@ -41,6 +41,23 @@ const modificationValidation = Joi.object({
     updatedAt: Joi.date()
 })
 
+//examResultObjValidation
+const examResultObjValidation = Joi.object({
+    marks: Joi.number()
+})
+
+//examDetailsItemsValidation
+const examDetailsItemsValidation = Joi.object({
+    examType: Joi.string(),
+    examSubject: Joi.string(),
+    totalMarks: Joi.string(),
+    examDate: Joi.date(),
+    result: examResultObjValidation
+})
+
+//examDetailsArrayValidtion
+const examDetailsArrayValidation = Joi.array().items(examDetailsItemsValidation)
+
 //main validation
 const studentValidation = Joi.object({
     userId:Joi.string().required().max(3).min(3),
@@ -50,7 +67,8 @@ const studentValidation = Joi.object({
     personalInfo: personalInfoValidation,
     academicInfo:academicInfoValidation,
     recoveryToken: Joi.string(),
-    modification: modificationValidation
+    modification: modificationValidation,
+    examDetails: examDetailsArrayValidation
 })
 
 module.exports = studentValidation

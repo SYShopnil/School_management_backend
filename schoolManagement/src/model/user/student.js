@@ -63,7 +63,33 @@ const studentSchema = new Schema({
         syllabus:{
             type: String,
             default: ""
-        }
+        },
+        examDetails: [
+            {
+                examType: {
+                    type: String,
+                    default: ""
+                },
+                examSubject: {
+                    type: String,
+                    default: ""
+                },
+                totalMarks: {
+                    type: Number,
+                    default: ""
+                },
+                examDate: {
+                    type: Date,
+                    default: Date.now
+                },
+                result:{
+                   marks: {
+                        type: Number,
+                        default: 0
+                   }
+                }
+            }
+        ]
     },
     recoveryToken:{
         type: String,
