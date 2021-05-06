@@ -5,6 +5,7 @@ const submissionSchema = new Schema({
     studentId: String,
     className: String,
     subject: String,
+    examType: String,
     studentAnswer: [
         {
             questionNo: Number,

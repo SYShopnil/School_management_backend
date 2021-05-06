@@ -9,7 +9,7 @@ const Syllabus = require("../../model/academic/syllabus")
 const jwtDecode = require("jwt-decode")
 const Admin = require("../../model/user/admin")
 const ResultSubmission = require("../../model/academic/resultSubmission")
-
+const examDetailsValidation = require("../../../validation/examDetailsValidation")
 
 //question set up controller
 const questionSetController = async (req, res) => {
@@ -183,7 +183,7 @@ const teacherAdminGetQestionController = async (req, res) => {
 //submit the result
 const resultSubmissionController = async (req, res) => {
     try{
-        const {studentAnswer} = req.body
+        const {studentAnswer,examType} = req.body
         const {subject} = req.params //get the data from params
         const token = req.header("Authorization") //get the token from header
         const tokenData = jwtDecode(token) //decode the token data
@@ -206,20 +206,147 @@ const resultSubmissionController = async (req, res) => {
                         studentId,
                         subject
                     }
-                ) //check is it available or not
+                ) //check the answer is it available or not
                 if(!isAnswerAvailable){
                     const newAnswer = new ResultSubmission({
                     studentId,
                     className,
                     subject,
-                    studentAnswer
+                    studentAnswer,
+                    examType
                 }) 
                 const saveAnswer = await newAnswer.save() //save the new answer
                     if(saveAnswer){
-                        res.status(201).json({
-                            message: "Response recorded succesfully",
-                            saveAnswer
-                        })
+                        const {subject} = req.params //get the data from params
+                        const token = req.header("Authorization") //get the token from header
+                        const tokenData = jwtDecode(token) //decode the token data
+                        const {id} = tokenData //get the data from token and store the id here
+                        const findTheStudent = await Student.findOne({_id: id, "academicInfo.isActive": true, "academicInfo.isDeleted": false}) //get the student 
+                        if(findTheStudent){
+                            const student = findTheStudent //store the student data here
+                            const {class:className} = student.academicInfo //get the class name of that student
+                            const {FirstName, LastName} =student.personalInfo.name //get the full name of that student
+                            const {userId} = student //get the student id from database
+                            const {_id} = student
+                            const isResponseAvailable = await ResultSubmission.findOne(
+                                {
+                                    studentId: userId ,
+                                    className,
+                                    subject
+                                }
+                            ) //check that is there have any response available or not
+                            if(isResponseAvailable){ //if response found
+                                const studentResponse = isResponseAvailable //store the response here
+                                const {examType} = studentResponse //get the exam type from student response
+                                const getTheQuestion  = await Question.findOne(
+                                    {
+                                        className,
+                                        subject:  subject,
+                                        examType
+                                    }
+                                ).select("questionSet.questionNo questionSet.originalAnswer questionSet.marks ")//find the question and get some specific value from data base
+
+                                if(getTheQuestion){
+                                    const question = getTheQuestion //store the question
+                                    // console.log("question = ",question );
+                                    // console.log("studentResponse = ",studentResponse );
+                                    let myMark = 0
+                                    let rightAnswer = 0
+                                    let wrongAnswer = 0
+                                    let totalMark = 0
+
+                                    //result generate part start
+                                    question.questionSet.map(questionElement => {
+                                        totalMark += questionElement.marks //get the total mark
+                                        studentResponse.studentAnswer.map(answerElement => {
+                                            if(questionElement.questionNo == answerElement.questionNo ){
+                                                if(questionElement.originalAnswer == answerElement.answer ){
+                                                    myMark += questionElement.marks //store the mark
+                                                    rightAnswer++ //if it's right then increment one
+                                                }else{
+                                                    wrongAnswer ++ //if it's wrong then increment one 
+                                                }
+                                            }
+                                        }) //map the student response
+
+                                    }) //map the question and find the main result with how many wrong answer and right answer there have with the total mark
+
+                                    //get the result here user for debugging purpose
+                                    // console.log("totalMark: ", totalMark);
+                                    // console.log("myMark: ", myMark);
+                                    // console.log("rightAnswer: ", rightAnswer);
+                                    // console.log("wrongAnswer: ", wrongAnswer);
+                                    // console.log("examType: ", examType);
+                                    // console.log("subject: ", subject);
+                                    // console.log("totalMarks: ", totalMark);
+                                    // console.log(userId);
+                                    // console.log(_id);
+                                    const saveData = await Student.updateOne(
+                                        {
+                                            userId,
+                                            "academicInfo.class":className,
+                                            "academicInfo.isActive": true,
+                                            "academicInfo.isDeleted": false,
+                                            _id,
+                                            "academicInfo.examDetails": {
+                                                $elemMatch : {
+                                                    examType: examType,
+                                                    examSubject: subject,
+                                                    totalMarks: totalMark
+                                                } //query the data from data base
+                                            }
+                                        }, //query part
+                                        {
+                                            $set : {
+                                                "academicInfo.examDetails.$.result.totalMark": totalMark,
+                                                "academicInfo.examDetails.$.result.marks": myMark,
+                                                "academicInfo.examDetails.$.result.rightAnswer": rightAnswer,
+                                                "academicInfo.examDetails.$.result.wrongAnswer": wrongAnswer
+                                            }
+                                        }, //update part
+                                        {} //option
+                                    )
+                                    // console.log(saveData);
+                                    if(saveData.nModified !== 0){ //if the student result has been updated
+                                        res.json({
+                                            message: "result is processing to approve"
+                                        })
+                                    }else{
+                                        res.json({
+                                            message: "result update failed or already updated"
+                                        })
+                                    }
+                                }else{
+                                    res.status(404).json({
+                                        message: "Question not found"
+                                    })
+                                }
+                            }else{
+                                res.status(404).json({
+                                    message: "Response not available"
+                                })
+                            }
+                        }else{
+                            res.status(404).json({
+                                message: "Student not found"
+                            })
+                        }
+
+
+
+                        //store the response in the question schema
+                        await Question.updateOne(
+                            {
+                                className,
+                                subject
+                            }, //query part
+                            {
+                                $inc: {
+                                    response: 1
+                                }
+                            }, //update part
+                            {} //option
+                        )
                     }else{
                         res.json({
                             message: "answer submission failed"
@@ -250,11 +377,154 @@ const resultSubmissionController = async (req, res) => {
     }
 }
 
+//update the exam details part
+const updateExamDetailsController = async (req, res) => {
+    try{
+        const {error} = examDetailsValidation.validate(req.body) //validation part of exam details
+        if(!error){
+            const {className} = req.params //get the data from params
+        const isValidClass = await Class.findOne({className}) //check that there have any class name or not
+        if(isValidClass){   
+            const updateExamDetails = await Student.updateMany(
+                {
+                    "academicInfo.class": className,
+                    "academicInfo.isActive": true,
+                    "academicInfo.isDeleted": false
+                }, //query
+                {
+                    $push : {
+                        "academicInfo.examDetails": req.body
+                    }
+                }, //update part
+                {multi: true}
+            ) //check and update the data
+            if(updateExamDetails){
+                res.status(202).json({
+                    message: `Exam details has been successfully updated of ${className} `
+                })
+            }else{
+                res.status(400).json({
+                    message: "Exam Update detaisl failed"
+                })
+            }
+            }else{
+                res.status.json({
+                    message: "Class not found"
+                })
+            }
+        }else{
+            res.json({
+                message: "Exam Details validation error",
+                error
+            })
+        }
+    }
+    catch(err){
+        console.log(err);
+        res.json({
+            err
+        })
+    }
+}
+
+//approve result for all student by class subject and exam name
+const approveResultController = async(req, res) => {
+    try{
+        const {className, subject, examType } = req.params //get the data from params
+        const findClass = await Class.findOne({className}) //find the class 
+        if(findClass){
+            const approveResult = await Student.updateMany(
+                {
+                    "academicInfo.class": className,
+                    "academicInfo.examDetails": {
+                        $elemMatch : {
+                            examType,
+                            examSubject: subject
+                        }
+                    }
+                }, //query
+                {
+                    $set : {
+                        "academicInfo.examDetails.$.result.isPublished": true
+                    }
+                }, //update
+                {multi: true} //option
+            ) //update and give the approval
+            if(approveResult.nModified !== 0){
+                res.json({
+                    message: `class ${className}'s ${subject} result of ${examType} has been approved `
+                }) //approve message
+            }else{
+                res.json({
+                    message: "approval failed"
+                })
+            }
+        }else{
+            res.json({
+                message: "Class Not found"
+            })
+        }
+    }
+    catch(err){
+        console.log(err);
+        res.json({
+            err
+        })
+    }
+}
+
+
+//get the result for student
+const viewResultController = async (req, res) => {
+    try{
+        const {subject, examType} = req.params //get the data from params
+        const token = req.header("Authorization") //get the token from header
+        const tokenData = jwtDecode(token) //decode the token data
+        const {id} = tokenData //get the data from token and store the id here
+        const findTheResult = await Student.findOne(
+            {
+                _id: id,
+                "academicInfo.examDetails": {
+                    $elemMatch : {
+                        examType,
+                        examSubject: subject,
+                        "result.isPublished": true
+                    }
+                }
+            } //query part 
+
+        ).select(`academicInfo.examDetails.result.totalMark 
+                    academicInfo.examDetails.result.marks
+                    academicInfo.examDetails.result.rightAnswer
+                    academicInfo.examDetails.result.wrongAnswer`) //get the result with some filtering
+
+        if(findTheResult){    //if the result has been found then send the result
+            res.json({
+                message: "Result found",
+                findTheResult
+            })
+        }else{  //else show that result is not available
+            res.json({
+                message: "Result is not ready yet or not approved by teacher"
+            })
+        }
+    }
+    catch(err){
+        console.log(err);
+        res.json({
+            err
+        })
+    }
+}
+
 //export part
 module.exports = {
     questionSetController,
     studentGetQuestionController,
     teacherAdminGetQestionController,
-    resultSubmissionController
+    resultSubmissionController,
+    updateExamDetailsController,
+    viewResultController,
+    approveResultController
 }
 

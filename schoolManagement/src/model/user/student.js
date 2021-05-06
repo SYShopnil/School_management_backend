@@ -83,10 +83,26 @@ const studentSchema = new Schema({
                     default: Date.now
                 },
                 result:{
-                   marks: {
+                    totalMark:{
+                       type: Number,
+                       default: 0
+                    },
+                    marks: {
                         type: Number,
                         default: 0
-                   }
+                    },
+                    rightAnswer: {
+                        type:Number,
+                        default: 0
+                    },
+                    wrongAnswer:{
+                        type:Number,
+                        default: 0
+                    },
+                    isPublished: {
+                        type: Boolean,
+                        default: false
+                    }
                 }
             }
         ]

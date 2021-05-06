@@ -12,6 +12,9 @@ const mcqQuestionSchema = new Schema ({
         trim: true,
         required: true
     },
+    examType: {
+        type: String
+    },
     questionSet: [
         {
             questionNo: {

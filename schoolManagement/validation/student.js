@@ -26,14 +26,6 @@ const personalInfoValidation = Joi.object({
 })
 
 
-//academicInfo validation
-const academicInfoValidation = Joi.object({
-    class: Joi.string().required(),
-    admissionDate: Joi.date(),
-    isActive: Joi.boolean(),
-    syllabus:Joi.string(),
-    isDeleted: Joi.boolean()
-})
 
 //modification validation
 const modificationValidation = Joi.object({
@@ -43,7 +35,11 @@ const modificationValidation = Joi.object({
 
 //examResultObjValidation
 const examResultObjValidation = Joi.object({
-    marks: Joi.number()
+    marks: Joi.number(),
+    totalMark: Joi.number(),
+    rightAnswer: Joi.number(),
+    wrongAnswer: Joi.number(),
+    isPublished: Joi.boolean()
 })
 
 //examDetailsItemsValidation
@@ -58,6 +54,17 @@ const examDetailsItemsValidation = Joi.object({
 //examDetailsArrayValidtion
 const examDetailsArrayValidation = Joi.array().items(examDetailsItemsValidation)
 
+//academicInfo validation
+const academicInfoValidation = Joi.object({
+    class: Joi.string().required(),
+    admissionDate: Joi.date(),
+    isActive: Joi.boolean(),
+    syllabus:Joi.string(),
+    isDeleted: Joi.boolean(),
+    examDetails: examDetailsArrayValidation
+})
+
+
 //main validation
 const studentValidation = Joi.object({
     userId:Joi.string().required().max(3).min(3),
@@ -68,7 +75,7 @@ const studentValidation = Joi.object({
     academicInfo:academicInfoValidation,
     recoveryToken: Joi.string(),
     modification: modificationValidation,
-    examDetails: examDetailsArrayValidation
+    
 })
 
 module.exports = studentValidation

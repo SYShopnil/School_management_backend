@@ -1,7 +1,10 @@
 const {questionSetController ,
         studentGetQuestionController,
         teacherAdminGetQestionController,
-        resultSubmissionController} = require("../controller/academic/mcqQuestion")
+        resultSubmissionController,
+        updateExamDetailsController,
+        viewResultController,
+        approveResultController} = require("../controller/academic/mcqQuestion")
 const getExpress = require("express")
 const fileUpload = require("../../middleware/fileUpload") //file upload middleware
 const imgUpload = require("../../middleware/imageUpload") //image upload middleware
@@ -17,6 +20,10 @@ route.post("/answer/submission/:subject", resultSubmissionController)
 
 route.get("/show/question/:subject", studentGetQuestionController)
 route.get("/show/question/:className/:subject", teacherAdminGetQestionController)
+route.get("/show/result/:examType/:subject", viewResultController)
+
+route.put("/update/exam/details/:className", updateExamDetailsController)
+route.put("/result/approve/all/:examType/:subject/:className", approveResultController)
 
 
 //export part

@@ -3,7 +3,10 @@ const mongoose = require("mongoose");
 const Schema = mongoose.Schema;
 
 const userSchema = new Schema({
-    userType: String,
+    userType: {
+        type: String,
+        default: "admin"
+    },
     email:String
 })
 
