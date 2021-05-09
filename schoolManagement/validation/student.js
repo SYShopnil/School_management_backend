@@ -54,6 +54,23 @@ const examDetailsItemsValidation = Joi.object({
 //examDetailsArrayValidtion
 const examDetailsArrayValidation = Joi.array().items(examDetailsItemsValidation)
 
+//recordArrayItemsPart
+const recordArrayItemsPart = Joi.object({
+    classDate: Joi.date(),
+    status: Joi.boolean().default(false)
+})
+
+//record Validation
+const recordValidation = Joi.array().items(recordArrayItemsPart)
+
+//attendanceRecord Validation
+const attendanceRecordValidation = Joi.object({
+    totalClass: Joi.number().default(0),
+    present: Joi.number().default(0),
+    absent: Joi.number().default(0),
+    record: recordValidation
+})
+
 //academicInfo validation
 const academicInfoValidation = Joi.object({
     class: Joi.string().required(),
@@ -61,7 +78,8 @@ const academicInfoValidation = Joi.object({
     isActive: Joi.boolean(),
     syllabus:Joi.string(),
     isDeleted: Joi.boolean(),
-    examDetails: examDetailsArrayValidation
+    examDetails: examDetailsArrayValidation,
+    attendanceRecord: attendanceRecordValidation
 })
 
 

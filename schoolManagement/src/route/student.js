@@ -8,7 +8,9 @@ const {
     individualStudentByIdController,
     viewSyllabusController,
     downloadSyllabusController,
-    viewOwnClassRoutineController} = require("../controller/user/student")
+    viewOwnClassRoutineController,
+    attendanceRecordController} = require("../controller/user/student")
+
 const getExpress = require("express")
 const fileUpload = require("../../middleware/fileUpload") //file upload middleware
 const imgUpload = require("../../middleware/imageUpload") //image upload middleware
@@ -21,6 +23,7 @@ const route = getExpress.Router();
 
 route.post("/create/newStudent",auth,permission(["admin"]),imgUpload.single("profileImage"), newStudentCreatController)
 route.post("/view/syllabus",auth,permission(["student"]), viewSyllabusController) //!!problem related to user route problem
+route.post("/record/attendance/:className", attendanceRecordController) //!!problem related to user route problem
 
 
 route.put("/update/info/:id",auth,permission(["admin"]),updateStudentInfoController)

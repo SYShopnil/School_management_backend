@@ -21,54 +21,61 @@ const newStudentCreatController = async (req, res) => {
             })
         }else{
             const {password, userId, personalInfo, userType} = req.body //get the expected data from req body
- 
-            //start the procedure of creat a unique user id
-            const splitedDateOfBirth = personalInfo.dateOfBirth.split("-")
-            const birthYear =  splitedDateOfBirth[0]
-            const birthDate = splitedDateOfBirth[splitedDateOfBirth.length - 1]
- 
-            //format of user id is (BirthDate - userID - BirthYear)
-            const generateUserId = `${birthDate}${userId}${birthYear}` //get the new user id
- 
-            const hashedPassword = await bcrypt.hash(password, 10)//hashed the password
-            // const hashedPasswordRetype = bcrypt.hash(retypePassword, 10)//hashed the retype one
-            const profilePic = req.file.filename
-            //creat the student
-            const student = new Student({
-                ...req.body,
-                userId: generateUserId,
-                password: hashedPassword,
-                "personalInfo.profilePic": profilePic
-            })//creat a new student
-            // console.log(generateUserId);
- 
-            //save the new student
-            const saveData = await student.save() //save new student
-            if(saveData){
-                res.status(201).json({
-                    message: "student has created successfully",
-                    saveData
+            const {class:className} = req.body.academicInfo //get the class name from req body
+            const isValidClass = await Class.findOne({className}) //find the class name
+            if(isValidClass){
+                    //start the procedure of creat a unique user id
+                const splitedDateOfBirth = personalInfo.dateOfBirth.split("-")
+                const birthYear =  splitedDateOfBirth[0]
+                const birthDate = splitedDateOfBirth[splitedDateOfBirth.length - 1]
+    
+                //format of user id is (BirthDate - userID - BirthYear)
+                const generateUserId = `${birthDate}${userId}${birthYear}` //get the new user id
+    
+                const hashedPassword = await bcrypt.hash(password, 10)//hashed the password
+                // const hashedPasswordRetype = bcrypt.hash(retypePassword, 10)//hashed the retype one
+                const profilePic = req.file.filename
+                //creat the student
+                const student = new Student({
+                    ...req.body,
+                    userId: generateUserId,
+                    password: hashedPassword,
+                    "personalInfo.profilePic": profilePic
+                })//creat a new student
+                // console.log(generateUserId);
+    
+                //save the new student
+                const saveData = await student.save() //save new student
+                if(saveData){
+                    res.status(201).json({
+                        message: "student has created successfully",
+                        saveData
+                    })
+                    await Class.updateOne(
+                        {
+                            className: saveData.academicInfo.class
+                        }, //query
+                        {
+                            $inc: {
+                                studentNumber: 1
+                            }
+                        }, //update part
+                        {} //option
+                    )
+                }
+    
+                //store the data in recovery model
+                const {email} = personalInfo //get the email from body
+                const user = new User({
+                    userType,
+                    email
+                }) //creat a new user in User model
+                await user.save() //save that data
+            }else{
+                res.status(404).json({
+                    message: "Class not found"
                 })
-                await Class.updateOne(
-                    {
-                        className: saveData.academicInfo.class
-                    }, //query
-                    {
-                        $inc: {
-                            studentNumber: 1
-                        }
-                    }, //update part
-                    {} //option
-                )
             }
- 
-            //store the data in recovery model
-            const {email} = personalInfo //get the email from body
-            const user = new User({
-                userType,
-                email
-            }) //creat a new user in User model
-            await user.save() //save that data
         }
     }
     catch(err){
@@ -485,6 +492,113 @@ const viewOwnClassRoutineController = async (req, res) => {
     }
 }
 
+//take the attendance record
+const attendanceRecordController = async (req, res) => {
+    try{
+        const {className} = req.params //get the class name from params data
+        const {classDate, record} = req.body //get the data from body input
+        let trackingStudent = 0 //track that all student record has been accepted or not
+        // console.log(record); //for debug purpose
+        const isValidClass = await Class.findOne({className}) //is it a valid class or not just check it 
+        if(isValidClass){ //if the class exist then it will execute
+            for(let i = 0 ; i<= record.length - 1; i++ ){ //iterate all student attendance record input 
+                const myData = record[i] //store the recordData into a variable
+                // console.log(myData); //for debug purpose
+                const findStudent = await Student.findOne({
+                    "academicInfo.class": className, 
+                    "userId": myData.studentId
+                }) //find the student from database
+                if(findStudent){
+                    // console.log("Student found"); //for debug purpose
+                    const student = findStudent //store the student into a variable
+                    if(myData.attendanceStatus == true){ //if the user is attend then it will execute
+                        const updateTheAttendanceRecord = await Student.updateOne(
+                            {
+                                "academicInfo.class": className, 
+                                "userId": myData.studentId
+                            }, //query part here  (query by student id and class)
+                            {
+                                $push: {
+                                    "academicInfo.attendanceRecord.record": {
+                                        "classDate": classDate,
+                                        "status": myData.attendanceStatus //update the attendance status
+                                    }
+                                },
+                                $inc: {
+                                    "academicInfo.attendanceRecord.totalClass": 1, //total class increase one for each student
+                                    "academicInfo.attendanceRecord.present": 1 //if the user present then increase one present in to the record
+                                },
+
+                            }, //update part
+                            {} //option
+                        ) //update data
+                        if(updateTheAttendanceRecord.nModified !== 0){ //if the modification has done execute it
+                            console.log("record Accepted");
+                            trackingStudent++ //for tracking purpose so that we can confirm that all student's attendance is updated
+                        }else{
+                            console.log("record accept failed");
+                        }
+                    }else if ( myData.attendanceStatus == false ){ //if the student is absent then it will execute
+                        const updateTheAttendanceRecord = await Student.updateOne(
+                            {
+                                "academicInfo.class": className, 
+                                "userId": myData.studentId 
+                            }, //query part here (query by student id and class)
+                            {
+                                $push: {
+                                    "academicInfo.attendanceRecord.record": {
+                                        "classDate": classDate,
+                                        "status": myData.attendanceStatus //update the attendance status
+                                    }
+                                },
+                                $inc: {
+                                    "academicInfo.attendanceRecord.totalClass": 1, //total class increase one for each student
+                                    "academicInfo.attendanceRecord.absent": 1 //if the user absent then increase one present in to the record
+                                },
+
+                            }, //update part
+                            {} //option
+                        ) //update data
+                        if(updateTheAttendanceRecord.nModified !== 0){ //if the modification has done execute it
+                            console.log("record Accepted");
+                            trackingStudent++  //for tracking purpose so that we can confirm that all student's attendance is updated
+                        }else{
+                            console.log("record accept failed");
+                        }
+                    }else{
+                        console.log("Update failed");
+                    }
+
+                }else{
+                    // console.log("Student not found");  //for debug purpose
+                    continue
+                }
+                
+            }
+            //check that all student's has been recorded successfully or not
+            if(record.length == trackingStudent){ //if recorded successfully then execute it
+                res.json({
+                    message: "All student record has been saved"
+                })
+            }else{ 
+                res.json({
+                    message: "All student record can not be saved"
+                })
+            }
+        }else{
+            res.status(404).json({
+                message: "Class not found"
+            })
+        }
+    }
+    catch(err){
+        console.log(err);
+        res.json({
+            err
+        })
+    }
+} 
+
 //export part
 module.exports = {
     newStudentCreatController,
@@ -496,5 +610,6 @@ module.exports = {
     individualStudentByIdController,
     viewSyllabusController,
     downloadSyllabusController,
-    viewOwnClassRoutineController
+    viewOwnClassRoutineController,
+    attendanceRecordController
 }

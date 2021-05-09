@@ -105,7 +105,30 @@ const studentSchema = new Schema({
                     }
                 }
             }
-        ]
+        ],
+        attendanceRecord: {
+            totalClass: {
+                type: Number,
+                default: 0
+            },
+            present: {
+                type: Number,
+                default: 0
+            },
+            absent: {
+                type: Number,
+                default: 0
+            },
+            record:[
+                {
+                    classDate: Date,
+                    status: {
+                        type: Boolean,
+                        default: false
+                    }
+                }
+            ]
+        }
     },
     recoveryToken:{
         type: String,
