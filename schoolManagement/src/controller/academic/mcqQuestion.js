@@ -10,6 +10,7 @@ const jwtDecode = require("jwt-decode")
 const Admin = require("../../model/user/admin")
 const ResultSubmission = require("../../model/academic/resultSubmission")
 const examDetailsValidation = require("../../../validation/examDetailsValidation")
+const e = require("express")
 
 //question set up controller
 const questionSetController = async (req, res) => {
@@ -517,6 +518,94 @@ const viewResultController = async (req, res) => {
     }
 }
 
+//see the result of individual student by subject and exam with id
+const seeResultByIdController = async (req, res ) => {
+    try{
+        const {id, subject, examType} = req.params //get the id from params 
+        const isValidStudent = await Student.findOne(
+            {
+                _id: id
+            }
+        ) //check that is it a valid student or not
+        if(isValidStudent) {
+            const student = isValidStudent //store the student data
+            const {FirstName, LastName} = student.personalInfo.name //get the first name and last name from database
+            const findResult = await Student.findOne(
+                {
+                    _id: id,
+                    "academicInfo.examDetails.examType": examType,
+                    "academicInfo.examDetails.examSubject": subject
+                }
+            ).select(
+                `academicInfo.examDetails.result
+                academicInfo.examDetails.examType
+                academicInfo.examDetails.examSubject
+                academicInfo.examDetails.examDate `
+                ) //get the result of that student with some selected data
+            if(!!findResult){ //if the result has been found
+                const result = findResult //store the found result in to another variable
+                res.json({
+                    message: `${FirstName} ${LastName}'s Result have been found`,
+                    result
+                })
+            }else{
+                res.status(404).json({
+                    message: "Result not found"
+                })
+            }
+        }else{
+            res.json({
+                message: "Student not found"
+            })
+        }
+    }
+    catch(err){
+        console.log(err);
+        res.json({
+            err
+        })
+    }
+}
+
+//see the result for all student by class
+const seeAllResultByClassController = async (req, res) => {
+    try{
+        const {className, examType, subject} = req.params //get the id from params 
+            const findResult = await Student.find(
+                {
+                   "academicInfo.class": className,
+                   "academicInfo.examDetails.examType": examType,
+                   "academicInfo.examDetails.examSubject": subject
+                }
+            ).select(
+                `academicInfo.class
+                personalInfo.name
+                userId
+                academicInfo.examDetails.result
+                academicInfo.examDetails.examType
+                academicInfo.examDetails.examSubject
+                academicInfo.examDetails.examDate `
+                ).sort({"academicInfo.examDetails.result.marks" : -1}) //get the result of that student with some selected data and rearrange it in descending order by their respective exam marks
+            if(!!findResult){ //if the result has been found
+                const result = findResult //store the found result in to another variable
+                res.json({
+                    message: `${className}s Result have been found`,
+                    result
+                })
+            }else{
+                res.status(404).json({
+                    message: "Result not found"
+                })
+            }
+    }
+    catch(err){
+        console.log(err);
+        res.json({
+            err
+        })
+    }
+}
+
 //export part
 module.exports = {
     questionSetController,
@@ -525,6 +614,8 @@ module.exports = {
     resultSubmissionController,
     updateExamDetailsController,
     viewResultController,
-    approveResultController
+    approveResultController,
+    seeResultByIdController,
+    seeAllResultByClassController
 }
 
