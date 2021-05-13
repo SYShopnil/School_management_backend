@@ -8,6 +8,12 @@ const { updateOne, findOne } = require("../../model/user/student")
 const Syllabus = require("../../model/academic/syllabus")
 const Teacher = require("../../model/user/teacher")
 const ClassRoutine = require("../../model/academic/classRoutine")
+const nodemailer = require("nodemailer")
+require("dotenv").config() 
+
+//get the nodemailer mail
+const Email = process.env.USER //ge the email from dot env file
+const password = process.env.PASSWORD // get the password from dot env file
  
 //creat a student
 const newStudentCreatController = async (req, res) => {
@@ -498,6 +504,7 @@ const attendanceRecordController = async (req, res) => {
         const {className} = req.params //get the class name from params data
         const {classDate, record} = req.body //get the data from body input
         let trackingStudent = 0 //track that all student record has been accepted or not
+        let absentEmail = [] //it is a empty array what store the absent student mail
         // console.log(record); //for debug purpose
         const isValidClass = await Class.findOne({className}) //is it a valid class or not just check it 
         if(isValidClass){ //if the class exist then it will execute
@@ -511,6 +518,8 @@ const attendanceRecordController = async (req, res) => {
                 if(findStudent){
                     // console.log("Student found"); //for debug purpose
                     const student = findStudent //store the student into a variable
+                    const {email} = student.personalInfo //get the email of the student we get
+                    const {FirstName, LastName} = student.personalInfo.name
                     if(myData.attendanceStatus == true){ //if the user is attend then it will execute
                         const updateTheAttendanceRecord = await Student.updateOne(
                             {
@@ -562,6 +571,32 @@ const attendanceRecordController = async (req, res) => {
                         if(updateTheAttendanceRecord.nModified !== 0){ //if the modification has done execute it
                             console.log("record Accepted");
                             trackingStudent++  //for tracking purpose so that we can confirm that all student's attendance is updated
+                            // absentEmail.push(email)
+                            // console.log(student);
+
+                            //send the mail to the absent student part start
+                            let transporter = nodemailer.createTransport({
+                                service: "gmail",
+                                auth: {
+                                    user: Email, //get the data from dot env file
+                                    pass: password //get the data from dot env file
+                                }
+                            }) //transporter part
+                            
+                            let mailOption = {
+                                from: "moontahasidrat@gmail.com",
+                                to: `${email}`,
+                                subject: "Absent in the class",
+                                text: `${FirstName} ${LastName} is absent on ${classDate}.`
+                            } //mail option part
+
+                            await transporter.sendMail(mailOption,(err, data) => { //email send part
+                                if(err){
+                                    console.log(err);
+                                }else{
+                                    console.log(`Message has successfully send to ${FirstName} ${LastName}`);
+                                }
+                            })
                         }else{
                             console.log("record accept failed");
                         }
@@ -575,6 +610,7 @@ const attendanceRecordController = async (req, res) => {
                 }
                 
             }
+
             //check that all student's has been recorded successfully or not
             if(record.length == trackingStudent){ //if recorded successfully then execute it
                 res.json({
@@ -585,6 +621,7 @@ const attendanceRecordController = async (req, res) => {
                     message: "All student record can not be saved"
                 })
             }
+
         }else{
             res.status(404).json({
                 message: "Class not found"
