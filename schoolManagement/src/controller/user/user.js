@@ -490,7 +490,7 @@ const resetPassword = async (req, res) => {
                         message: "token is not valid"
                     })
                 }else{
-                    const tokenData = isValidToken //store the token data here
+                    const tokenData = isValidToken //store the token data here this will decode auto the token so we don't need to decode it with jwt decoder
                     const {id, useType:userType} = tokenData; //get id from token
                     if(userType == "admin"){ //if the user is admin
                         const user = await Admin.findOne(
